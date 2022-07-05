@@ -14,9 +14,11 @@ async fn run() -> Result<(), io::Error> {
     while let Some(stream) = incoming.next().await {
         let stream = stream?;
         println!("{:?}", stream);
-        if let Err(e) = handle(stream).await {
-            eprintln!("=== {}", e);
-        }
+        task::spawn(async {
+            if let Err(e) = handle(stream).await {
+                eprintln!("=== {}", e);
+            }
+        });
     }
     Ok(())
 }
