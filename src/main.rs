@@ -6,17 +6,20 @@ use std::sync::Mutex;
 use std::time::Duration;
 use std::thread::{sleep, spawn};
 
+lazy_static::lazy_static! {
+    static ref MAP: Mutex<HashMap<usize, u16>> = Mutex::new(HashMap::new());
+}
+
 fn main() -> Result<(), io::Error> {
-    let map = Mutex::new(HashMap::new());
     let listener = TcpListener::bind("127.0.0.1:12345")?;
     for stream in listener.incoming() {
         let stream = stream?;
         println!("{:?}", stream);
-        //spawn(||
-            if let Err(e) = handle(stream, &map) {
+        spawn(||
+            if let Err(e) = handle(stream, &MAP) {
                 eprintln!("=== {}", e);
             }
-        //);
+        );
     }
     Ok(())
 }
