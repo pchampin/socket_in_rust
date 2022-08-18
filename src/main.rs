@@ -3,25 +3,24 @@ use std::io;
 use std::io::Write;
 use std::net::{TcpListener, TcpStream};
 use std::sync::Mutex;
+use std::thread::{scope, sleep};
 use std::time::Duration;
-use std::thread::{sleep, spawn};
-
-lazy_static::lazy_static! {
-    static ref MAP: Mutex<HashMap<usize, u16>> = Mutex::new(HashMap::new());
-}
 
 fn main() -> Result<(), io::Error> {
     let listener = TcpListener::bind("127.0.0.1:12345")?;
-    for stream in listener.incoming() {
-        let stream = stream?;
-        println!("{:?}", stream);
-        spawn(||
-            if let Err(e) = handle(stream, &MAP) {
-                eprintln!("=== {}", e);
-            }
-        );
-    }
-    Ok(())
+    let map: Mutex<HashMap<usize, u16>> = Mutex::new(HashMap::new());
+    scope(|s| {
+        for stream in listener.incoming() {
+            let stream = stream?;
+            println!("{:?}", stream);
+            s.spawn(|| {
+                if let Err(e) = handle(stream, &map) {
+                    eprintln!("=== {}", e);
+                }
+            });
+        }
+        Ok(())
+    })
 }
 
 fn handle(mut stream: TcpStream, map: &Mutex<HashMap<usize, u16>>) -> Result<(), io::Error> {
